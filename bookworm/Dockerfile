@@ -4,14 +4,14 @@
 
 # BUILD STAGE
 
-FROM cm2network/steamcmd:root-bookworm as build_stage
+FROM cm2network/steamcmd:root-bookworm AS build_stage
 
 LABEL maintainer="joedwards32@gmail.com"
 
-ENV STEAMAPPID 730
-ENV STEAMAPP cs2
-ENV STEAMAPPDIR "${HOMEDIR}/${STEAMAPP}-dedicated"
-ENV STEAMAPPVALIDATE 0
+ENV STEAMAPPID=730
+ENV STEAMAPP=cs2
+ENV STEAMAPPDIR="${HOMEDIR}/${STEAMAPP}-dedicated"
+ENV STEAMAPPVALIDATE=0
 
 COPY etc/entry.sh "${HOMEDIR}/entry.sh"
 COPY etc/server.cfg "/etc/server.cfg"
@@ -25,10 +25,11 @@ RUN set -x \
 		wget \
 		ca-certificates \
 		lib32z1 \
-                simpleproxy \
-                libicu-dev \
-                unzip \
+        simpleproxy \
+        libicu-dev \
+        unzip \
 		jq \
+        curl \
 	&& mkdir -p "${STEAMAPPDIR}" \
 	# Add entry script
 	&& chmod +x "${HOMEDIR}/entry.sh" \
@@ -81,6 +82,21 @@ RUN set -x \
 USER ${USER}
 
 WORKDIR ${HOMEDIR}
+
+# --- Install Metamod + Sourcemod ---
+ENV METAMOD_URL="https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1365-linux.tar.gz"
+ENV SOURCEMOD_URL="https://sm.alliedmods.net/smdrop/1.12/sourcemod-1.12.0-git7048-linux.tar.gz"
+
+RUN set -eux; \
+    mkdir -p "${STEAMAPPDIR}/game/csgo"; \
+    curl -fSL "$METAMOD_URL" -o /tmp/mms.tar.gz; \
+    tar -xzf /tmp/mms.tar.gz -C "${STEAMAPPDIR}/game/csgo"; \
+    rm /tmp/mms.tar.gz; \
+    test -d "${STEAMAPPDIR}/game/csgo/addons/metamod"; \
+    curl -fSL "$SOURCEMOD_URL" -o /tmp/sm.tar.gz; \
+    tar -xzf /tmp/sm.tar.gz -C "${STEAMAPPDIR}/game/csgo"; \
+    rm /tmp/sm.tar.gz; \
+    test -d "${STEAMAPPDIR}/game/csgo/addons/sourcemod"
 
 CMD ["bash", "entry.sh"]
 
