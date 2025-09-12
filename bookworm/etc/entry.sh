@@ -1,26 +1,62 @@
 #!/bin/bash
 
+# Debug
+
+## Steamcmd debugging
+if [[ $DEBUG -eq 1 ]] || [[ $DEBUG -eq 3 ]]; then
+    STEAMCMD_SPEW="+set_spew_level 4 4"
+fi
+## CS2 server debugging
+if [[ $DEBUG -eq 2 ]] || [[ $DEBUG -eq 3 ]]; then
+    CS2_LOG="on"
+    CS2_LOG_MONEY=1
+    CS2_LOG_DETAIL=3
+    CS2_LOG_ITEMS=1
+fi
+
 # Create App Dir
 mkdir -p "${STEAMAPPDIR}" || true
 
 # Download Updates
-
 if [[ "$STEAMAPPVALIDATE" -eq 1 ]]; then
     VALIDATE="validate"
 else
     VALIDATE=""
 fi
 
-eval bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "${STEAMAPPDIR}" \
+## SteamCMD can fail to download
+## Retry logic
+MAX_ATTEMPTS=3
+attempt=0
+while [[ $steamcmd_rc != 0 ]] && [[ $attempt -lt $MAX_ATTEMPTS ]]; do
+    ((attempt+=1))
+    if [[ $attempt -gt 1 ]]; then
+        echo "Retrying SteamCMD, attempt ${attempt}"
+        # Stale appmanifest data can lead for HTTP 401 errors when requesting old
+        # files from SteamPipe CDN
+        echo "Removing steamapps (appmanifest data)..."
+        rm -rf "${STEAMAPPDIR}/steamapps"
+    fi
+    eval bash "${STEAMCMDDIR}/steamcmd.sh" "${STEAMCMD_SPEW}"\
+                                +force_install_dir "${STEAMAPPDIR}" \
+                                +@bClientTryRequestManifestWithoutCode 1 \
 				+login anonymous \
 				+app_update "${STEAMAPPID}" "${VALIDATE}"\
 				+quit
+    steamcmd_rc=$?
+done
+
+## Exit if steamcmd fails
+if [[ $steamcmd_rc != 0 ]]; then
+    exit $steamcmd_rc
+fi
 
 # steamclient.so fix
 mkdir -p ~/.steam/sdk64
 ln -sfT ${STEAMCMDDIR}/linux64/steamclient.so ~/.steam/sdk64/steamclient.so
 
 # Install server.cfg
+mkdir -p $STEAMAPPDIR/game/csgo/cfg
 cp /etc/server.cfg "${STEAMAPPDIR}"/game/csgo/cfg/server.cfg
 
 # Install hooks if they don't already exist
@@ -34,7 +70,32 @@ fi
 # Download and extract custom config bundle
 if [[ ! -z $CS2_CFG_URL ]]; then
     echo "Downloading config pack from ${CS2_CFG_URL}"
-    wget -qO- "${CS2_CFG_URL}" | tar xvzf - -C "${STEAMAPPDIR}"
+
+    TEMP_DIR=$(mktemp -d)
+    TEMP_FILE="${TEMP_DIR}/$(basename ${CS2_CFG_URL})"
+    wget -qO "${TEMP_FILE}" "${CS2_CFG_URL}"
+
+    case "${TEMP_FILE}" in
+        *.zip)
+            echo "Extracting ZIP file..."
+            unzip -o -q "${TEMP_FILE}" -d "${STEAMAPPDIR}"
+            ;;
+        *.tar.gz | *.tgz)
+            echo "Extracting TAR.GZ or TGZ file..."
+            tar xvzf "${TEMP_FILE}" -C "${STEAMAPPDIR}"
+            ;;
+        *.tar)
+            echo "Extracting TAR file..."
+            tar xvf "${TEMP_FILE}" -C "${STEAMAPPDIR}"
+            ;;
+        *)
+            echo "Unsupported file type"
+            rm -rf "${TEMP_DIR}"
+            exit 1
+            ;;
+    esac
+
+    rm -rf "${TEMP_DIR}"
 fi
 
 # Rewrite Config Files
@@ -61,7 +122,7 @@ if [[ ! -z $CS2_BOT_DIFFICULTY ]] ; then
     sed -i "s/bot_difficulty.*/bot_difficulty ${CS2_BOT_DIFFICULTY}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
 fi
 if [[ ! -z $CS2_BOT_QUOTA ]] ; then
-    sed -i "s/bot_quota.*/bot_quota ${CS2_BOT_QUOTA}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
+    sed -ri "s/bot_quota[[:space:]]+.*/bot_quota ${CS2_BOT_QUOTA}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
 fi
 if [[ ! -z $CS2_BOT_QUOTA_MODE ]] ; then
     sed -i "s/bot_quota_mode.*/bot_quota_mode ${CS2_BOT_QUOTA_MODE}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
@@ -109,6 +170,10 @@ if [[ ! -z $CS2_HOST_WORKSHOP_MAP ]]; then
     CS2_HOST_WORKSHOP_MAP_ARGS="+host_workshop_map ${CS2_HOST_WORKSHOP_MAP}"
 fi
 
+if [[ ! -z $CS2_PW ]]; then
+    CS2_PW_ARGS="+sv_password ${CS2_PW}"
+fi
+
 # Start Server
 
 if [[ ! -z $CS2_RCON_PORT ]]; then
@@ -130,7 +195,7 @@ eval "./cs2" -dedicated \
         "${CS2_MP_MATCH_END_CHANGELEVEL}" \
         +rcon_password "${CS2_RCONPW}" \
         "${SV_SETSTEAMACCOUNT_ARGS}" \
-        +sv_password "${CS2_PW}" \
+        "${CS2_PW_ARGS}" \
         +sv_lan "${CS2_LAN}" \
         +tv_port "${TV_PORT}" \
         "${CS2_ADDITIONAL_ARGS}"

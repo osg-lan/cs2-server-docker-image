@@ -9,6 +9,12 @@ This Docker image contains the dedicated server of the game.
 <img src="https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg?t=1696011820" alt="logo" width="300"/></img>
 
 # How to use this image
+
+## Available Container Image Repositories
+
+* Docker Hub: `joedwards32/cs2`
+* GitHub: `ghcr.io/joedwards32/cs2`
+
 ## Hosting a simple game server
 
 Running using Docker:
@@ -31,7 +37,7 @@ or using docker-compose, see [examples](https://github.com/joedwards32/CS2/blob/
 $ docker compose --file examples/docker-compose.yml up -d cs2-server
 ```
 
-You must have at least **40GB** of free disk space! See [System Requirements](./#system-requirements).
+You must have at least **60GB** of free disk space! See [System Requirements](./#system-requirements).
 
 **The container will automatically update the game on startup, so if there is a game update just restart the container.**
 
@@ -43,16 +49,19 @@ Minimum system requirements are:
 
 * 2 CPUs
 * 2GiB RAM
-* 40GB of disk space for the container or mounted as a persistent volume on `/home/steam/cs2-dedicated/`
+* 60GB of disk space for the container or mounted as a persistent volume on `/home/steam/cs2-dedicated/`
+  * Note: More space may be required if you plan to install mods
 
 ## Environment Variables
-Feel free to overwrite these environment variables, using -e (--env): 
+Feel free to overwrite these environment variables, using -e (--env):
+
+**Note:** `/` characters in Counter-Strike-related environment variables **must be escaped** as `\/` (e. g. `CS2_SERVERNAME="My Server 1\/3` will result in `My Server 1/3` in-game). Otherwise, this may cause unexpected behavior during configuration processing 
 
 ### Server Configuration
 
 ```dockerfile
 SRCDS_TOKEN=""              (Game Server Token from https://steamcommunity.com/dev/managegameservers)
-CS2_SERVERNAME="changeme"   (Set the visible name for your private server)
+CS2_SERVERNAME="changeme"   (Set the visible name for your private server.)
 CS2_CHEATS=0                (0 - disable cheats, 1 - enable cheats)
 CS2_SERVER_HIBERNATE=0      (Put server in a low CPU state when there are no players. 
                              0 - hibernation disabled, 1 - hibernation enabled
@@ -63,7 +72,7 @@ CS2_RCON_PORT=""            (Optional, use a simple TCP proxy to have RCON liste
                              Useful for services like AWS Fargate which do not support mixed protocol ports.)
 CS2_LAN="0"                 (0 - LAN mode disabled, 1 - LAN Mode enabled)
 CS2_RCONPW="changeme"       (RCON password)
-CS2_PW="changeme"           (CS2 server password)
+CS2_PW=""                   (Optional, CS2 server password)
 CS2_MAXPLAYERS=10           (Max players)
 CS2_ADDITIONAL_ARGS=""      (Optional additional arguments to pass into cs2)
 ```
@@ -128,6 +137,14 @@ ds_workshop_changelevel $map_name
 
 # Customizing this Container
 
+## Debug Logging
+
+If you want to increase the verbosity of log output set the `DEBUG` environment variable:
+
+```dockerfile
+DEBUG=0                    (0=none, 1=steamcmd, 2=cs2, 3=all)
+```
+
 ## Validating Game Files
 
 If you break the game through your customisations and want steamcmd to validate and redownload then set the `STEAMAPPVALIDATE` environment variable to `1`:
@@ -165,13 +182,13 @@ mp_maxrounds	16	// Shorter games
 
 ## Customisation Bundle
 
-The container can be instructed to download a extract a Tar Gzip of configuration files and other customisations from a given URL.
+The container can be instructed to download a extract a Tar Gzip bundle, Tar or Zip archive of configuration files and other customisations from a given URL.
 
 ```dockerfile
-CS2_CFG_URL=""          (HTTP/HTTPS URL to fetch a Tar Gzip bundle of configuration files/mods)
+CS2_CFG_URL=""          (HTTP/HTTPS URL to fetch a Tar Gzip bundle, Tar or Zip archive of configuration files/mods)
 ```
 
-See [examples](https://github.com/joedwards32/CS2/blob/main/examples/cs2.cfg.tgz) for a correctly formatted Tar Gzip customisation bundle.
+See [examples](https://github.com/joedwards32/CS2/blob/main/examples/cs2.cfg.tgz) for a correctly formatted Tar Gzip customisation bundle, the same format applies to all archive types.
 
 
 # Credits
