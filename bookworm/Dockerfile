@@ -73,7 +73,7 @@ ENV CS2_SERVERNAME="cs2 private server" \
     CS2_ADDITIONAL_ARGS=""
 
 # Set permissions on STEAMAPPDIR
-#   Permissions may need to be reset if persistent volume mounted
+# Permissions may need to be reset if persistent volume mounted
 RUN set -x \
         && chown -R "${USER}:${USER}" "${STEAMAPPDIR}" \
         && chmod 0777 "${STEAMAPPDIR}"
@@ -83,20 +83,35 @@ USER ${USER}
 
 WORKDIR ${HOMEDIR}
 
-# --- Install Metamod + Sourcemod ---
+# Install Metamod
 ENV METAMOD_URL="https://mms.alliedmods.net/mmsdrop/2.0/mmsource-2.0.0-git1365-linux.tar.gz"
-ENV SOURCEMOD_URL="https://sm.alliedmods.net/smdrop/1.12/sourcemod-1.12.0-git7048-linux.tar.gz"
 
 RUN set -eux; \
     mkdir -p "${STEAMAPPDIR}/game/csgo"; \
     curl -fSL "$METAMOD_URL" -o /tmp/mms.tar.gz; \
     tar -xzf /tmp/mms.tar.gz -C "${STEAMAPPDIR}/game/csgo"; \
     rm /tmp/mms.tar.gz; \
-    test -d "${STEAMAPPDIR}/game/csgo/addons/metamod"; \
-    curl -fSL "$SOURCEMOD_URL" -o /tmp/sm.tar.gz; \
-    tar -xzf /tmp/sm.tar.gz -C "${STEAMAPPDIR}/game/csgo"; \
-    rm /tmp/sm.tar.gz; \
-    test -d "${STEAMAPPDIR}/game/csgo/addons/sourcemod"
+    test -d "${STEAMAPPDIR}/game/csgo/addons/metamod"
+
+# Install MatchZy (with CounterStrikeSharp)
+ENV MATCHZY_URL="https://github.com/shobhit-pathak/MatchZy/releases/download/0.8.13/MatchZy-0.8.13-with-cssharp-linux.zip"
+
+# Copy MatchZy configs
+COPY MatchZy/config.cfg /tmp/matchzy_extract/cfg/MatchZy/config.cfg
+COPY MatchZy/admins.json /tmp/matchzy_extract/cfg/MatchZy/admins.json
+
+RUN set -eux; \
+    curl -fSL "$MATCHZY_URL" -o /tmp/matchzy.zip; \
+    unzip -o /tmp/matchzy.zip -d /tmp/matchzy_extract; \
+    rm /tmp/matchzy.zip; \
+    # Copy our custom config
+    mkdir -p /tmp/matchzy_extract/cfg/MatchZy; \
+    cp /tmp/matchzy_custom/config.cfg /tmp/matchzy_extract/cfg/MatchZy/config.cfg; \
+    cp /tmp/matchzy_custom/admins.json /tmp/matchzy_extract/cfg/MatchZy/admins.json; \
+    # Copy addons
+    find /tmp/matchzy_extract -type d -name addons -exec cp -r {}/* "${STEAMAPPDIR}/game/csgo/addons/" \; ; \
+    rm -rf /tmp/matchzy_extract
+
 
 CMD ["bash", "entry.sh"]
 
