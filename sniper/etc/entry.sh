@@ -51,7 +51,7 @@ if [[ $steamcmd_rc != 0 ]]; then
     exit $steamcmd_rc
 fi
 
-# steamclient.so fix
+# FIX: steamclient.so fix
 mkdir -p ~/.steam/sdk64
 ln -sfT ${STEAMCMDDIR}/linux64/steamclient.so ~/.steam/sdk64/steamclient.so
 
@@ -129,7 +129,7 @@ if [[ ! -z $CS2_BOT_QUOTA_MODE ]] ; then
 fi
 
 # Switch to server directory
-cd "${STEAMAPPDIR}/game/bin/linuxsteamrt64"
+cd "${STEAMAPPDIR}/game/"
 
 # Pre Hook
 source "${STEAMAPPDIR}/pre.sh"
@@ -182,7 +182,7 @@ if [[ ! -z $CS2_RCON_PORT ]]; then
 fi
 
 echo "Starting CS2 Dedicated Server"
-eval "./cs2" -dedicated \
+eval "./cs2.sh" -dedicated \
         "${CS2_IP_ARGS}" -port "${CS2_PORT}" \
         -console \
         -usercon \
