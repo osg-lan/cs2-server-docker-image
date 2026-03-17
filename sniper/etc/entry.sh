@@ -115,6 +115,7 @@ sed -i -e "s/{{SERVER_HOSTNAME}}/${CS2_SERVERNAME}/g" \
        -e "s/{{TV_DELAY}}/${TV_DELAY}/g" \
        -e "s/{{SERVER_LOG}}/${CS2_LOG}/g" \
        -e "s/{{SERVER_LOG_FILE}}/${CS2_LOG_FILE}/g" \
+       -e "s/{{SERVER_LOG_ECHO}}/${CS2_LOG_ECHO}/g" \
        -e "s/{{SERVER_LOG_MONEY}}/${CS2_LOG_MONEY}/g" \
        -e "s/{{SERVER_LOG_DETAIL}}/${CS2_LOG_DETAIL}/g" \
        -e "s/{{SERVER_LOG_ITEMS}}/${CS2_LOG_ITEMS}/g" \

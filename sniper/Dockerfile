@@ -90,6 +90,7 @@ ENV CS2_SERVERNAME="cs2 private server" \
     CS2_CFG_URL="" \
     CS2_LOG="on" \
     CS2_LOG_FILE=0 \
+    CS2_LOG_ECHO=0 \
     CS2_LOG_MONEY=0 \
     CS2_LOG_DETAIL=0 \
     CS2_LOG_ITEMS=0 \
