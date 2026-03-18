@@ -117,6 +117,10 @@ CS2_LOG="on"                ('on'/'off')
 CS2_LOG_MONEY=0             (Turns money logging on/off: 0=off, 1=on)
 CS2_LOG_DETAIL=0            (Combat damage logging: 0=disabled, 1=enemy, 2=friendly, 3=all)
 CS2_LOG_ITEMS=0             (Turns item logging on/off: 0=off, 1=on)
+CS2_LOG_FILE=0              (Turns logging into a file on/off: 0=off, 1=on)
+CS2_LOG_ECHO=0              (This command sets whether or not all of text that is saved to the log file is also written in the console: 0=off, 1=on)
+CS2_DISCONNECT_KILLS=1      (Turning this command on causes players to die in game if they disconnect: 0=off, 1=on)
+CS2_LOG_HTTP_URL="<endpoint-url>" (This command is used to set URI of a listener to receive logs via HTTP POST. The URI must be wrapped in double quotes.)
 ```
 
 ### Steam Workshop
