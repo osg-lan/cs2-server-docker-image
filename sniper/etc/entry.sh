@@ -9,6 +9,7 @@ fi
 ## CS2 server debugging
 if [[ $DEBUG -eq 2 ]] || [[ $DEBUG -eq 3 ]]; then
     CS2_LOG="on"
+    CS2_LOG_FILE=1
     CS2_LOG_MONEY=1
     CS2_LOG_DETAIL=3
     CS2_LOG_ITEMS=1
@@ -113,10 +114,17 @@ sed -i -e "s/{{SERVER_HOSTNAME}}/${CS2_SERVERNAME}/g" \
        -e "s/{{TV_MAXRATE}}/${TV_MAXRATE}/g" \
        -e "s/{{TV_DELAY}}/${TV_DELAY}/g" \
        -e "s/{{SERVER_LOG}}/${CS2_LOG}/g" \
+       -e "s/{{SERVER_LOG_FILE}}/${CS2_LOG_FILE}/g" \
+       -e "s/{{SERVER_LOG_ECHO}}/${CS2_LOG_ECHO}/g" \
        -e "s/{{SERVER_LOG_MONEY}}/${CS2_LOG_MONEY}/g" \
        -e "s/{{SERVER_LOG_DETAIL}}/${CS2_LOG_DETAIL}/g" \
        -e "s/{{SERVER_LOG_ITEMS}}/${CS2_LOG_ITEMS}/g" \
+       -e "s/{{SERVER_DISCONNECT_KILLS}}/${CS2_DISCONNECT_KILLS}/g" \
        "${STEAMAPPDIR}"/game/csgo/cfg/server.cfg
+
+if [[ ! -z $CS2_LOG_HTTP_URL ]]; then
+    printf 'logaddress_add_http "%s"\n' "${CS2_LOG_HTTP_URL}" >> "${STEAMAPPDIR}"/game/csgo/cfg/server.cfg
+fi
 
 if [[ ! -z $CS2_BOT_DIFFICULTY ]] ; then
     sed -i "s/bot_difficulty.*/bot_difficulty ${CS2_BOT_DIFFICULTY}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
