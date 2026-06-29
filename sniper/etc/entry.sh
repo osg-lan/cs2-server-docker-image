@@ -9,6 +9,7 @@ fi
 ## CS2 server debugging
 if [[ $DEBUG -eq 2 ]] || [[ $DEBUG -eq 3 ]]; then
     CS2_LOG="on"
+    CS2_LOG_FILE=1
     CS2_LOG_MONEY=1
     CS2_LOG_DETAIL=3
     CS2_LOG_ITEMS=1
@@ -113,10 +114,17 @@ sed -i -e "s/{{SERVER_HOSTNAME}}/${CS2_SERVERNAME}/g" \
        -e "s/{{TV_MAXRATE}}/${TV_MAXRATE}/g" \
        -e "s/{{TV_DELAY}}/${TV_DELAY}/g" \
        -e "s/{{SERVER_LOG}}/${CS2_LOG}/g" \
+       -e "s/{{SERVER_LOG_FILE}}/${CS2_LOG_FILE}/g" \
+       -e "s/{{SERVER_LOG_ECHO}}/${CS2_LOG_ECHO}/g" \
        -e "s/{{SERVER_LOG_MONEY}}/${CS2_LOG_MONEY}/g" \
        -e "s/{{SERVER_LOG_DETAIL}}/${CS2_LOG_DETAIL}/g" \
        -e "s/{{SERVER_LOG_ITEMS}}/${CS2_LOG_ITEMS}/g" \
+       -e "s/{{SERVER_DISCONNECT_KILLS}}/${CS2_DISCONNECT_KILLS}/g" \
        "${STEAMAPPDIR}"/game/csgo/cfg/server.cfg
+
+if [[ ! -z $CS2_LOG_HTTP_URL ]]; then
+    printf 'logaddress_add_http "%s"\n' "${CS2_LOG_HTTP_URL}" >> "${STEAMAPPDIR}"/game/csgo/cfg/server.cfg
+fi
 
 if [[ ! -z $CS2_BOT_DIFFICULTY ]] ; then
     sed -i "s/bot_difficulty.*/bot_difficulty ${CS2_BOT_DIFFICULTY}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
@@ -128,14 +136,14 @@ if [[ ! -z $CS2_BOT_QUOTA_MODE ]] ; then
     sed -i "s/bot_quota_mode.*/bot_quota_mode ${CS2_BOT_QUOTA_MODE}/" "${STEAMAPPDIR}"/game/csgo/cfg/*
 fi
 
-# Rewrite tv_delay in gamemode_competitive.cfg (because it supersedes the value in server.cfg)
-if [[ -n "${TV_DELAY}" ]]; then
-    COMPETITIVE_CFG="${STEAMAPPDIR}/game/csgo/cfg/gamemode_competitive.cfg"
-    if grep -q "^tv_delay" "$COMPETITIVE_CFG"; then
-        sed -ri "s/^tv_delay[[:space:]]+.*/tv_delay ${TV_DELAY}/" "$COMPETITIVE_CFG"
-    else
-        echo "tv_delay ${TV_DELAY}" >> "$COMPETITIVE_CFG"
-    fi
+# Rewrite tv_delay in all gamemode_*.cfg files
+if [[ -n "$TV_DELAY" ]]; then
+    for f in "${STEAMAPPDIR}"/game/csgo/cfg/gamemode_*.cfg; do
+        [[ -e "$f" ]] || continue
+        grep -q "^tv_delay" "$f" \
+            && sed -i "s/^tv_delay.*/tv_delay ${TV_DELAY}/" "$f" \
+            || echo "tv_delay ${TV_DELAY}" >> "$f"
+    done
 fi
 
 # Switch to server directory
