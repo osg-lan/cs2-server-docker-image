@@ -216,7 +216,7 @@ eval "./cs2.sh" -dedicated \
         "${CS2_PW_ARGS}" \
         +sv_lan "${CS2_LAN}" \
         +tv_port "${TV_PORT}" \
-        ${CS2_ADDITIONAL_ARGS}
+        "${CS2_ADDITIONAL_ARGS}"
 
 # Post Hook
 source "${STEAMAPPDIR}/post.sh"
